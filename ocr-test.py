@@ -58,6 +58,7 @@ def deskew(image):
 def match_template(image, template):
     return cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED) 
 
+# pass array of images (which should be numpy arrays) for processing: grayscale > gaussian blur > thresholding, and returns processed images
 def process_images(image_arr):
     processed_images = [];
     for i, page in enumerate(image_arr):
@@ -69,6 +70,7 @@ def process_images(image_arr):
         processed_images.append(page_threshold);
     return processed_images;
 
+# pass array of images and create results based on different image processing sequences, write to script folder as png files
 def test_images(image_arr):
     for i, page in enumerate(image_arr):
         # load normal Image as np array
@@ -117,11 +119,13 @@ def test_images(image_arr):
         # img = cv2.imread(page);
         # status = cv2.imwrite("do-page-"+ i +".png", img);
 
+
 do_imgs = pdf2image.convert_from_path("do-sample-combined.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # print(do_img);
 processed_imgs = process_images(do_imgs);
 
 end_pages = [];
+# loop through pages, do ocr to convert to text, find text on the last page to determine where to split
 for i, page in enumerate(processed_imgs):
 
     data = pytesseract.image_to_string(page).upper();
