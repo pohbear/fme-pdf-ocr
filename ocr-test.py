@@ -144,6 +144,7 @@ for i, page in enumerate(processed_imgs):
 print(do_num);
 print(end_pages);
 
+# split pdf
 pdf = PdfReader("FME-DO-11-COMBINED.pdf");
 count = 1;
 output = PdfWriter();
