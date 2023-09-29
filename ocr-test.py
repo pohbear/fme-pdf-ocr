@@ -3,8 +3,9 @@ import numpy as np;
 import pandas as pd;
 import cv2;
 import pytesseract;
-import pypdf;
+from pypdf import PdfReader, PdfWriter
 import pdf2image;
+import re;
 
 # get grayscale image
 def get_grayscale(image):
@@ -84,25 +85,21 @@ def test_images(image_arr):
         page_deskew = deskew(page_gs);
         status_deskew = cv2.imwrite("deskew-page-"+ str(i) +".png", page_gs);
 
-        # # convert normal to denoise, write to file 
+        # convert normal to denoise, write to file 
         # page_noise = remove_noise(page_arr);
         # status_noise = cv2.imwrite("noise-page-"+ str(i) +".png", page_noise);
 
-        # # convert normal to gaussian denoise, write to file
+        # convert normal to gaussian denoise, write to file
         # page_gaussian = remove_noise_gaussian(page_arr);
         # status_gaussian = cv2.imwrite("gaussian-page-"+ str(i) +".png", page_gaussian);
-
-        # convert normal to threshold, write to file
-        # page_thresh = thresholding(page_arr);
-        # status_thresh = cv2.imwrite("thresh-page-"+ str(i) +".png", page_thresh);
 
         # # convert grayscale to denoise, write to file
         # page_gs_noise = remove_noise(page_gs);
         # status_gs_noise = cv2.imwrite("gs-to-denoise-page-"+ str(i) +".png", page_gs_noise);
 
         # # convert grayscale to gaussian, write to file
-        # page_gs_gaussian = remove_noise_gaussian(page_gs);
-        # status_gs_gaussian = cv2.imwrite("gs-to-gaussian-page-"+ str(i) +".png", page_gs_gaussian);
+        page_gs_gaussian = remove_noise_gaussian(page_gs);
+        status_gs_gaussian = cv2.imwrite("gs-to-gaussian-page-"+ str(i) +".png", page_gs_gaussian);
 
         # # convert grayscale to threshold, write to file
         # page_gs_thresh = thresholding(page_gs);
@@ -112,42 +109,49 @@ def test_images(image_arr):
         # page_gs_noise_thresh = thresholding(page_gs_noise);
         # status_gs_noise_thresh = cv2.imwrite("gs-to-denoise-to-thresh-page-"+ str(i) +".png", page_gs_noise_thresh);
 
-        # # convert grayscale to gaussian to threshold, write to file
-        # page_gs_gaussian_thresh = thresholding(page_gs_gaussian);
-        # status_gs_gaussian_thresh = cv2.imwrite("gs-to-gaussian-to-thresh-page-"+ str(i) +".png", page_gs_gaussian_thresh);
+        # convert grayscale to gaussian to threshold, write to file
+        page_gs_gaussian_thresh = thresholding(page_gs_gaussian);
+        status_gs_gaussian_thresh = cv2.imwrite("gs-to-gaussian-to-thresh-page-"+ str(i) +".png", page_gs_gaussian_thresh);
 
         # img = cv2.imread(page);
         # status = cv2.imwrite("do-page-"+ i +".png", img);
 
+# test_imgs = pdf2image.convert_from_path("FME-DO-4-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
+# test_images(test_imgs);
 
-do_imgs = pdf2image.convert_from_path("do-sample-combined.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
+do_imgs = pdf2image.convert_from_path("FME-DO-11-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # print(do_img);
 processed_imgs = process_images(do_imgs);
 
-end_pages = [];
+do_num = [];
+end_pages = {};
 # loop through pages, do ocr to convert to text, find text on the last page to determine where to split
 for i, page in enumerate(processed_imgs):
 
-    data = pytesseract.image_to_string(page).upper();
-    print(data);
-    if "RECIPIENT" in data and "CHOP" in data and "SIGNATURE" in data:
-        end_pages.append(i);
-    
+    data = pytesseract.image_to_string(page);
+    print("---------------\n",data,"\n-----------------");
+    do = re.findall(r'FME-DO-\d{4}-[A-Za-z0-9]{8}', data);
+    if len(do) != 0:
+        do_num.append(do[0]);
+    if ("RECIPIENT" in data.upper() and "CHOP" in data.upper() and "SIGNATURE" in data.upper()) or ("PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper()):
+        do_num.sort();
+        if len(do_num) == 0:
+            end_pages[str(i)] = "DO_ID_NOTFOUND_" + str(i);
+        else:
+            end_pages[str(i)] = do_num[len(do_num)-1];
+        do_num.clear();
+
+print(do_num);
 print(end_pages);
 
-
-# img = cv2.imread("testimg.png");
-# print(img);
-
-# some_arr = np.array([1, 2, 3, 4, 5]);
-# for i, num in enumerate(some_arr):
-#     print(i);
-#     print(num);
-# some_num = some_arr[2];
-# some_arr[2] += 1;
-# print(some_num);
-# slice_arr = some_arr[:3];
-# print(slice_arr);
-# print(some_arr);
-
-
+pdf = PdfReader("FME-DO-11-COMBINED.pdf");
+count = 1;
+output = PdfWriter();
+for i in range(len(pdf.pages)):
+    output.add_page(pdf.pages[i]);
+    if str(i) in end_pages:
+        print("end page found");
+        with open("%s.pdf" % end_pages[str(i)], "wb") as outputStream:
+                output.write(outputStream);
+                output = PdfWriter();
+        count += 1;
