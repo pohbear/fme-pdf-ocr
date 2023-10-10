@@ -119,6 +119,10 @@ def test_images(image_arr):
 # test_imgs = pdf2image.convert_from_path("FME-DO-4-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # test_images(test_imgs);
 
+# TO EDIT: NO NEED TO CUT DOCUMENT ANYMORE, JUST NEED TO LOOP THROUGH FOLDER OF PDFS, PERFORM OCR ON EACH, THEN GET THE DO ID AND RENAME THE FILE
+
+
+
 do_imgs = pdf2image.convert_from_path("FME-DO-11-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # print(do_img);
 processed_imgs = process_images(do_imgs);
