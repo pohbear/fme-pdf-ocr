@@ -1,11 +1,12 @@
-from PIL import Image;
+# from PIL import Image;
 import numpy as np;
-import pandas as pd;
+# import pandas as pd;
 import cv2;
 import pytesseract;
 from pypdf import PdfReader, PdfWriter
 import pdf2image;
 import re;
+import os;
 
 # get grayscale image
 def get_grayscale(image):
@@ -116,47 +117,105 @@ def test_images(image_arr):
         # img = cv2.imread(page);
         # status = cv2.imwrite("do-page-"+ i +".png", img);
 
+def ocr_find_id(image_arr):
+    id_name = ''
+    for i, page in enumerate(image_arr):
+        print(f'Getting data from page {i+1:d}')
+        data = pytesseract.image_to_string(page)
+        print(f'----------------------data------------------\n{data:s}')
+        if "FME-DO-" in data.upper():
+            do = re.findall(r'FME-DO-\d{4}-[A-Za-z0-9]{8}', data)
+            if len(do) != 0:
+                id_name = do[0]
+                break
+            else:
+                id_name = "NOT_FOUND_DO_ID"
+        elif "FME-CS-" in data.upper():
+            cs = re.findall(r'FME-CS-\d{4}-[A-Za-z0-9]{8}', data)
+            if len(cs) != 0:
+                id_name = cs[0]
+                break
+            else:
+                id_name = "NOT_FOUND_CS_ID"
+        elif "PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper():
+            id_name = "DELIVERY_NOTE"
+            break
+        else:
+            id_name = "NOT_FOUND"
+    return id_name
+
+
+
+
 # test_imgs = pdf2image.convert_from_path("FME-DO-4-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # test_images(test_imgs);
 
 # TO EDIT: NO NEED TO CUT DOCUMENT ANYMORE, JUST NEED TO LOOP THROUGH FOLDER OF PDFS, PERFORM OCR ON EACH, THEN GET THE DO ID AND RENAME THE FILE
+scanned_file_arr = []
+filepath_str = 'D:\\Kenneth\\Work\\fme-pdf-ocr-main\\fme-pdf-ocr'
+filepath = os.fsencode(filepath_str)
+
+# for file in os.listdir(filepath):
+#     filename = os.fsdecode(file);
+#     if filename.endswith(".pdf"):
+#         print(os.path.join(filepath_str, filename));
+
+for subdir, dirs, files in os.walk(filepath):
+    subdir_str = os.fsdecode(subdir)
+    for file in files:
+        filename = os.fsdecode(file)
+        if filename.endswith('.pdf'):
+            full_filepath = os.path.join(subdir_str, filename)
+            # print(full_filepath);
+            # scanned_file_arr.append(full_filepath);
+            img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+            print(f'----------------------image length------------------\n{len(img):d}')
+            # print(img)
+            # processed_img = process_images(img)
+            # print(processed_img)
+            file_id = ocr_find_id(img)
+            print(f'----------------------file id------------------\n{file_id:s}')
+            # pdf = PdfReader(filename)
+            # os.rename(filename, )
 
 
+# img = pdf2image.convert_from_path('D:\\Kenneth\\Work\\fme-pdf-ocr-main\\fme-pdf-ocr\\pdfs\\09102023102055-0011.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+# test_images(img)
 
-do_imgs = pdf2image.convert_from_path("FME-DO-11-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
-# print(do_img);
-processed_imgs = process_images(do_imgs);
+# do_imgs = 
+# # print(do_img);
+# processed_imgs = process_images(do_imgs);
 
-do_num = [];
-end_pages = {};
-# loop through pages, do ocr to convert to text, find text on the last page to determine where to split
-for i, page in enumerate(processed_imgs):
+# do_num = [];
+# end_pages = {};
+# # loop through pages, do ocr to convert to text, find text on the last page to determine where to split
+# for i, page in enumerate(processed_imgs):
 
-    data = pytesseract.image_to_string(page);
-    print("---------------\n",data,"\n-----------------");
-    do = re.findall(r'FME-DO-\d{4}-[A-Za-z0-9]{8}', data);
-    if len(do) != 0:
-        do_num.append(do[0]);
-    if ("RECIPIENT" in data.upper() and "CHOP" in data.upper() and "SIGNATURE" in data.upper()) or ("PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper()):
-        do_num.sort();
-        if len(do_num) == 0:
-            end_pages[str(i)] = "DO_ID_NOTFOUND_" + str(i);
-        else:
-            end_pages[str(i)] = do_num[len(do_num)-1];
-        do_num.clear();
+#     
+#     
+#     
+#     if len(do) != 0:
+#         do_num.append(do[0]);
+#     
+#         do_num.sort();
+#         if len(do_num) == 0:
+#             end_pages[str(i)] = "DO_ID_NOTFOUND_" + str(i);
+#         else:
+#             end_pages[str(i)] = do_num[len(do_num)-1];
+#         do_num.clear();
 
-print(do_num);
-print(end_pages);
+# print(do_num);
+# print(end_pages);
 
-# split pdf
-pdf = PdfReader("FME-DO-11-COMBINED.pdf");
-count = 1;
-output = PdfWriter();
-for i in range(len(pdf.pages)):
-    output.add_page(pdf.pages[i]);
-    if str(i) in end_pages:
-        print("end page found");
-        with open("%s.pdf" % end_pages[str(i)], "wb") as outputStream:
-                output.write(outputStream);
-                output = PdfWriter();
-        count += 1;
+# # split pdf
+# pdf = PdfReader("FME-DO-11-COMBINED.pdf");
+# count = 1;
+# output = PdfWriter();
+# for i in range(len(pdf.pages)):
+#     output.add_page(pdf.pages[i]);
+#     if str(i) in end_pages:
+#         print("end page found");
+#         with open("%s.pdf" % end_pages[str(i)], "wb") as outputStream:
+#                 output.write(outputStream);
+#                 output = PdfWriter();
+#         count += 1;
