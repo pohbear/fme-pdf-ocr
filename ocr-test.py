@@ -119,7 +119,8 @@ def test_images(image_arr):
 
 def ocr_find_id(image_arr):
     id_name = ''
-    for i, page in enumerate(image_arr):
+    processed_images = process_images(image_arr)
+    for i, page in enumerate(processed_images):
         print(f'Getting data from page {i+1:d}')
         data = pytesseract.image_to_string(page)
         print(f'----------------------data------------------\n{data:s}')
@@ -138,10 +139,36 @@ def ocr_find_id(image_arr):
             else:
                 id_name = "NOT_FOUND_CS_ID_"
         elif "PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper():
-            id_name = "DELIVERY_NOTE"
+            id_name = "DELIVERY_NOTE_"
             break
         else:
             id_name = "NOT_FOUND_"
+    # if cannot find the id, try to perform ocr on the unprocessed image instead, and try to 
+    if "NOT_FOUND_" in id_name:
+        print("ID not found from processed images, performing OCR on original image")
+        for i, page in enumerate(image_arr):
+            print(f'Getting data from page {i+1:d}')
+            data = pytesseract.image_to_string(page)
+            print(f'----------------------data------------------\n{data:s}')
+            if "FME-DO-" in data.upper():
+                do = re.findall(r'FME-DO-\d{4}-[A-Za-z0-9]{8}', data)
+                if len(do) != 0:
+                    id_name = do[0]
+                    break
+                else:
+                    id_name = "NOT_FOUND_DO_ID_"
+            elif "FME-CS-" in data.upper():
+                cs = re.findall(r'FME-CS-\d{4}-[A-Za-z0-9]{8}', data)
+                if len(cs) != 0:
+                    id_name = cs[0]
+                    break
+                else:
+                    id_name = "NOT_FOUND_CS_ID_"
+            elif "PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper():
+                id_name = "DELIVERY_NOTE_"
+                break
+            else:
+                id_name = "NOT_FOUND_"
     return id_name
 
 
@@ -160,34 +187,34 @@ filepath = os.fsencode(filepath_str)
 #     if filename.endswith(".pdf"):
 #         print(os.path.join(filepath_str, filename));
 
-for subdir, dirs, files in os.walk(filepath):
-    subdir_str = os.fsdecode(subdir)
-    for file in files:
-        filename = os.fsdecode(file)
-        if filename.endswith('.pdf'):
-            full_filepath = os.path.join(subdir_str, filename)
-            # print(full_filepath);
-            # scanned_file_arr.append(full_filepath);
-            img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
-            print(f'----------------------image length------------------\n{len(img):d}')
-            # print(img)
-            processed_img = process_images(img)
-            # print(processed_img)
-            file_id = ocr_find_id(processed_img)
-            if "NOT_FOUND" in file_id.upper():
-                file_id = file_id + filename
-            else:
-                file_id = file_id + ".pdf"
-            print(f'----------------------file id------------------\n{file_id:s}')
-            # pdf = PdfReader(filename)
-            new_filepath = subdir_str + "\\" + file_id
-            os.rename(full_filepath, new_filepath)
+# for subdir, dirs, files in os.walk(filepath):
+#     subdir_str = os.fsdecode(subdir)
+#     for file in files:
+#         filename = os.fsdecode(file)
+#         if filename.endswith('.pdf'):
+#             full_filepath = os.path.join(subdir_str, filename)
+#             # print(full_filepath);
+#             # scanned_file_arr.append(full_filepath);
+#             img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+#             print(f'----------------------image length------------------\n{len(img):d}')
+#             # print(img)
+#             processed_img = process_images(img)
+#             # print(processed_img)
+#             file_id = ocr_find_id(processed_img)
+#             if "NOT_FOUND" in file_id.upper() or "DELIVERY_NOTE" in file_id.upper():
+#                 file_id = file_id + filename
+#             else:
+#                 file_id = file_id + ".pdf"
+#             print(f'----------------------file id------------------\n{file_id:s}')
+#             # pdf = PdfReader(filename)
+#             new_filepath = subdir_str + "\\" + file_id
+#             os.rename(full_filepath, new_filepath)
 
 
-# img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0005.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
-# test_images(img)
-# file_id = ocr_find_id(img)
-# print(file_id)
+img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0011.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+test_images(img)
+file_id = ocr_find_id(img)
+print(file_id)
 
 # do_imgs = 
 # # print(do_img);
