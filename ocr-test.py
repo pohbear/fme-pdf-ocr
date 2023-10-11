@@ -129,19 +129,19 @@ def ocr_find_id(image_arr):
                 id_name = do[0]
                 break
             else:
-                id_name = "NOT_FOUND_DO_ID"
+                id_name = "NOT_FOUND_DO_ID_"
         elif "FME-CS-" in data.upper():
             cs = re.findall(r'FME-CS-\d{4}-[A-Za-z0-9]{8}', data)
             if len(cs) != 0:
                 id_name = cs[0]
                 break
             else:
-                id_name = "NOT_FOUND_CS_ID"
+                id_name = "NOT_FOUND_CS_ID_"
         elif "PREPARED BY" in data.upper() and "RECEIVED BY" in data.upper():
             id_name = "DELIVERY_NOTE"
             break
         else:
-            id_name = "NOT_FOUND"
+            id_name = "NOT_FOUND_"
     return id_name
 
 
@@ -152,7 +152,7 @@ def ocr_find_id(image_arr):
 
 # TO EDIT: NO NEED TO CUT DOCUMENT ANYMORE, JUST NEED TO LOOP THROUGH FOLDER OF PDFS, PERFORM OCR ON EACH, THEN GET THE DO ID AND RENAME THE FILE
 scanned_file_arr = []
-filepath_str = 'D:\\Kenneth\\Work\\fme-pdf-ocr-main\\fme-pdf-ocr'
+filepath_str = 'C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr'
 filepath = os.fsencode(filepath_str)
 
 # for file in os.listdir(filepath):
@@ -171,16 +171,23 @@ for subdir, dirs, files in os.walk(filepath):
             img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
             print(f'----------------------image length------------------\n{len(img):d}')
             # print(img)
-            # processed_img = process_images(img)
+            processed_img = process_images(img)
             # print(processed_img)
-            file_id = ocr_find_id(img)
+            file_id = ocr_find_id(processed_img)
+            if "NOT_FOUND" in file_id.upper():
+                file_id = file_id + filename
+            else:
+                file_id = file_id + ".pdf"
             print(f'----------------------file id------------------\n{file_id:s}')
             # pdf = PdfReader(filename)
-            # os.rename(filename, )
+            new_filepath = subdir_str + "\\" + file_id
+            os.rename(full_filepath, new_filepath)
 
 
-# img = pdf2image.convert_from_path('D:\\Kenneth\\Work\\fme-pdf-ocr-main\\fme-pdf-ocr\\pdfs\\09102023102055-0011.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+# img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0005.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
 # test_images(img)
+# file_id = ocr_find_id(img)
+# print(file_id)
 
 # do_imgs = 
 # # print(do_img);
