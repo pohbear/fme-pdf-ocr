@@ -57,6 +57,12 @@ def deskew(image):
     rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     return rotated
 
+def rotate_right(image):
+    return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+
+def rotate_left(image):
+    return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
 #template matching
 def match_template(image, template):
     return cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED) 
@@ -85,7 +91,7 @@ def test_images(image_arr):
 
         # deskew grayscale, write to file
         page_deskew = deskew(page_gs);
-        status_deskew = cv2.imwrite("deskew-page-"+ str(i) +".png", page_gs);
+        status_deskew = cv2.imwrite("deskew-page-"+ str(i) +".png", page_deskew);
 
         # convert normal to denoise, write to file 
         # page_noise = remove_noise(page_arr);
@@ -189,33 +195,33 @@ filepath = os.fsencode(filepath_str)
 #     if filename.endswith(".pdf"):
 #         print(os.path.join(filepath_str, filename));
 
-for subdir, dirs, files in os.walk(filepath):
-    subdir_str = os.fsdecode(subdir)
-    for file in files:
-        filename = os.fsdecode(file)
-        if filename.endswith('.pdf'):
-            full_filepath = os.path.join(subdir_str, filename)
-            # print(full_filepath);
-            # scanned_file_arr.append(full_filepath);
-            img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
-            print(f'----------------------image length------------------\n{len(img):d}')
-            # print(img)
-            # print(processed_img)
-            file_id = ocr_find_id(img)
-            if "NOT_FOUND" in file_id.upper() or "DELIVERY_NOTE" in file_id.upper():
-                file_id = file_id + filename
-            else:
-                file_id = file_id + ".pdf"
-            print(f'----------------------file id------------------\n{file_id:s}')
-            # pdf = PdfReader(filename)
-            new_filepath = subdir_str + "\\" + file_id
-            os.rename(full_filepath, new_filepath)
+# for subdir, dirs, files in os.walk(filepath):
+#     subdir_str = os.fsdecode(subdir)
+#     for file in files:
+#         filename = os.fsdecode(file)
+#         if filename.endswith('.pdf'):
+#             full_filepath = os.path.join(subdir_str, filename)
+#             # print(full_filepath);
+#             # scanned_file_arr.append(full_filepath);
+#             img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+#             print(f'----------------------image length------------------\n{len(img):d}')
+#             # print(img)
+#             # print(processed_img)
+#             file_id = ocr_find_id(img)
+#             if "NOT_FOUND" in file_id.upper() or "DELIVERY_NOTE" in file_id.upper():
+#                 file_id = file_id + filename
+#             else:
+#                 file_id = file_id + ".pdf"
+#             print(f'----------------------file id------------------\n{file_id:s}')
+#             # pdf = PdfReader(filename)
+#             new_filepath = subdir_str + "\\" + file_id
+#             os.rename(full_filepath, new_filepath)
 
 
-# img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0011.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
-# test_images(img)
-# file_id = ocr_find_id(img)
-# print(file_id)
+img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0012.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+test_images(img)
+file_id = ocr_find_id(img)
+print(file_id)
 
 # do_imgs = 
 # # print(do_img);
