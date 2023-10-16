@@ -57,9 +57,11 @@ def deskew(image):
     rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     return rotated
 
+# rotating image right, not used currently but could explore if want to account for DN
 def rotate_right(image):
     return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
 
+# rotating image left, not used currently but could explore if want to account for DN
 def rotate_left(image):
     return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
@@ -124,6 +126,7 @@ def test_images(image_arr):
         # img = cv2.imread(page);
         # status = cv2.imwrite("do-page-"+ i +".png", img);
 
+# takes in numpy image array, processes image and performs ocr on it to find id. if cant find from processed, perform ocr on original image array
 def ocr_find_id(image_arr):
     id_name = ''
     processed_images = process_images(image_arr)
@@ -132,6 +135,7 @@ def ocr_find_id(image_arr):
         data = pytesseract.image_to_string(page)
         print(f'----------------------data------------------\n{data:s}')
         if "DELIVERY ORDER" in data.upper():
+            # regex to find delivery order with "FME-DO-nnnn-xxxxxxxx" where n is number, x is any alphanumeric character
             do = re.findall(r'FME-DO-\d{4}-[A-Za-z0-9]{8}', data)
             if len(do) != 0:
                 id_name = do[0]
@@ -139,6 +143,7 @@ def ocr_find_id(image_arr):
             else:
                 id_name = "NOT_FOUND_DO_ID_"
         elif "CASH SALES TAX INVOICE" in data.upper():
+            # regex to find cash sales with "FME-CS-nnnn-xxxxxxxx" where n is number, x is any alphanumeric character
             cs = re.findall(r'FME-CS-\d{4}-[A-Za-z0-9]{8}', data)
             if len(cs) != 0:
                 id_name = cs[0]
@@ -150,7 +155,8 @@ def ocr_find_id(image_arr):
             break
         else:
             id_name = "NOT_FOUND_"
-    # if cannot find the id, try to perform ocr on the unprocessed image instead, and try to 
+    # if cannot find the id, try to perform ocr on the unprocessed image instead
+    # loop is basically copy of whatever is above, just passing in different image_arr
     if "NOT_FOUND_" in id_name:
         print("ID not found from processed images, performing OCR on original image")
         for i, page in enumerate(image_arr):
@@ -184,17 +190,14 @@ def ocr_find_id(image_arr):
 # test_imgs = pdf2image.convert_from_path("FME-DO-4-COMBINED.pdf", poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin');
 # test_images(test_imgs);
 
-# TO EDIT: NO NEED TO CUT DOCUMENT ANYMORE, JUST NEED TO LOOP THROUGH FOLDER OF PDFS, PERFORM OCR ON EACH, THEN GET THE DO ID AND RENAME THE FILE
-scanned_file_arr = []
-filepath_str = 'C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr'
-filepath = os.fsencode(filepath_str)
 
-# # simple navigation through specified encoded filepath to find pdfs
-# for file in os.listdir(filepath):
-#     filename = os.fsdecode(file);
-#     if filename.endswith(".pdf"):
-#         print(os.path.join(filepath_str, filename));
 
+### MAIN CODE
+# setup, hardcoded filepath
+# scanned_file_arr = []
+# filepath_str = 'C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr'
+# filepath = os.fsencode(filepath_str)
+#
 # for subdir, dirs, files in os.walk(filepath):
 #     subdir_str = os.fsdecode(subdir)
 #     for file in files:
@@ -206,7 +209,6 @@ filepath = os.fsencode(filepath_str)
 #             img = pdf2image.convert_from_path(full_filepath, poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
 #             print(f'----------------------image length------------------\n{len(img):d}')
 #             # print(img)
-#             # print(processed_img)
 #             file_id = ocr_find_id(img)
 #             if "NOT_FOUND" in file_id.upper() or "DELIVERY_NOTE" in file_id.upper():
 #                 file_id = file_id + filename
@@ -217,38 +219,19 @@ filepath = os.fsencode(filepath_str)
 #             new_filepath = subdir_str + "\\" + file_id
 #             os.rename(full_filepath, new_filepath)
 
+### simple navigation through specified encoded filepath to find pdfs
+# for file in os.listdir(filepath):
+#     filename = os.fsdecode(file);
+#     if filename.endswith(".pdf"):
+#         print(os.path.join(filepath_str, filename));
 
-img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0012.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
-test_images(img)
-file_id = ocr_find_id(img)
-print(file_id)
+### chunk to test image processing
+# img = pdf2image.convert_from_path('C:\\Users\\FMEUser15\\Documents\\Repos\\fme-pdf-ocr\\pdfs\\NOT_FOUND_09102023102055-0012.pdf', poppler_path=r'C:\Program Files\poppler-23.08.0\Library\bin')
+# test_images(img)
+# file_id = ocr_find_id(img)
+# print(file_id)
 
-# do_imgs = 
-# # print(do_img);
-# processed_imgs = process_images(do_imgs);
-
-# do_num = [];
-# end_pages = {};
-# # loop through pages, do ocr to convert to text, find text on the last page to determine where to split
-# for i, page in enumerate(processed_imgs):
-
-#     
-#     
-#     
-#     if len(do) != 0:
-#         do_num.append(do[0]);
-#     
-#         do_num.sort();
-#         if len(do_num) == 0:
-#             end_pages[str(i)] = "DO_ID_NOTFOUND_" + str(i);
-#         else:
-#             end_pages[str(i)] = do_num[len(do_num)-1];
-#         do_num.clear();
-
-# print(do_num);
-# print(end_pages);
-
-# # split pdf
+### splitting pdf based on end of page, only contains partial code because some of it was repurposed for the main function
 # pdf = PdfReader("FME-DO-11-COMBINED.pdf");
 # count = 1;
 # output = PdfWriter();
